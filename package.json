@@ -1,0 +1,42 @@
+{
+    "name": "@anf/biosphere-client",
+    "version": "0.0.0-dev",
+    "description": "A client-side API to pub/sub to Biosphere channels.",
+    "keywords": [
+        "biosphere",
+        "ws",
+        "websockets",
+        "socketio",
+        "events",
+        "messages",
+        "laravel",
+        "laravel-11",
+        "laravel-12",
+        "laravel-13",
+        "js",
+        "ts",
+        "javascript",
+        "typescript",
+        "realtime",
+        "eda",
+        "event-driven-development",
+        "events",
+        "spa",
+        "game-development"
+    ],
+    "homepage": "https://github.com/anafro/laravel-biosphere-client#readme",
+    "bugs": {
+        "url": "https://github.com/anafro/laravel-biosphere-client/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/anafro/laravel-biosphere-client.git"
+    },
+    "license": "MIT",
+    "author": "Anatoly Frolov (anafro)",
+    "type": "module",
+    "main": "./src/index.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    }
+}
