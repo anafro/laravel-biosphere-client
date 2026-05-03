@@ -10,17 +10,25 @@ export type BiosphereClientOptions = Readonly<{
 }>;
 
 export type BiosphereMessageHandler = (message: BiosphereMessage, event: string, channel: BiosphereChannel) => void;
+export type BiosphereChannelOptions = Partial<{
+    debug: boolean,
+}>;
 
 export class BiosphereChannel {
     private readonly name: string;
     private readonly handlers: Map<RegExp, BiosphereMessageHandler>;
     private readonly websocket: WebSocket;
-
-    public constructor(websocket: WebSocket, name: string) {
+    private readonly debug: (message: any) => any;
+    public constructor(
+        websocket: WebSocket,
+        name: string, {
+            debug = false,
+        }: BiosphereChannelOptions = {}) {
         require('websocket', websocket);
         require('channel name', name);
 
         this.name = name;
+        this.debug = debug ? (message) => console.info(`Channel '${name}': ${message}`) : () => { };
         this.handlers = new Map();
         this.websocket = websocket;
         this.websocket.onmessage = this.receive.bind(this);
@@ -30,11 +38,11 @@ export class BiosphereChannel {
     }
 
     public on(pattern: RegExp, handler: BiosphereMessageHandler): void {
+        this.debug(`${pattern}: +handler`);
         this.handlers.set(pattern, handler);
     }
 
     public off(pattern: RegExp): void {
-        this.handlers.delete(pattern);
         this.debug(`${pattern}: -handler`);
         for (const [key] of this.handlers) {
             if (regExpEquals(key, pattern)) {
@@ -45,10 +53,12 @@ export class BiosphereChannel {
     }
 
     public offAll(): void {
+        this.debug(`-all handlers`);
         this.handlers.clear();
     }
 
     public send(event: string, data: Record<string, unknown>): void {
+        this.debug(`🗣️ ${event}: ${JSON.stringify(data, null, 4)}`);
         const message: BiosphereMessage = {
             channel: this.name,
             event,
@@ -58,7 +68,6 @@ export class BiosphereChannel {
 
         const json: string = JSON.stringify(message);
         this.websocket.send(json);
-        console.log(`Sent to ${this.name}`, message);
     }
 
     private receive(messageEvent: MessageEvent): void {
@@ -70,6 +79,7 @@ export class BiosphereChannel {
         }
 
         const message = JSON.parse(messageData as string) satisfies BiosphereMessage;
+        this.debug(`👂 ${message.event}: ${JSON.stringify(message, null, 4)} `);
         this.handle(message);
     }
 
@@ -79,17 +89,23 @@ export class BiosphereChannel {
         for (const [pattern, handler] of this.handlers.entries()) {
             if (pattern.test(event)) {
                 handler(message, event, this);
+                this.debug(`${message.event}: handled.`);
             }
         }
 
     }
 
     private open(_: Event): void {
-        console.info(`Channel '${this.name}' opened`);
+        this.debug(`open!`);
         this.on(/ping/, () => this.send('pong', {}));
+        this.handle({
+            event: 'open',
+            channel: this.name,
+        })
     }
 
     public close(closeEvent: CloseEvent | undefined = undefined): void {
+        this.debug(`close!`);
         const reason: string = closeEvent?.reason ?? 'manual';
         this.websocket.close();
         this.handle({
@@ -97,7 +113,6 @@ export class BiosphereChannel {
             channel: this.name,
         });
         this.offAll();
-        console.info(`Channel '${this.name}' closed: ${reason}`, closeEvent);
     }
 
     private error(event: Event): void {
@@ -126,10 +141,10 @@ class BiosphereClient {
         this.channels = [];
     }
 
-    public async channel(name: string): Promise<BiosphereChannel> {
+    public async channel(name: string, options: BiosphereChannelOptions = {}): Promise<BiosphereChannel> {
         require('channel name', name);
         const websocket = await this.createWebsocket(name);
-        const channel = new BiosphereChannel(websocket, name);
+        const channel = new BiosphereChannel(websocket, name, options);
         this.channels.push(channel);
 
         return channel;
