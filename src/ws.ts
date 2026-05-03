@@ -1,6 +1,7 @@
 import { isJson } from "./json";
 import { BiosphereMessage } from "./message";
 import { require } from "./guards";
+import { regExpEquals } from "./regexp";
 
 export type BiosphereClientOptions = Readonly<{
     csrf: string;
@@ -34,6 +35,13 @@ export class BiosphereChannel {
 
     public off(pattern: RegExp): void {
         this.handlers.delete(pattern);
+        this.debug(`${pattern}: -handler`);
+        for (const [key] of this.handlers) {
+            if (regExpEquals(key, pattern)) {
+                this.handlers.delete(key);
+                break;
+            }
+        }
     }
 
     public offAll(): void {
