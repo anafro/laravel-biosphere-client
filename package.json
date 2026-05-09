@@ -1,6 +1,6 @@
 {
-    "name": "@anf/biosphere-client",
-    "version": "0.0.0-dev",
+    "name": "@laravel-biosphere/client",
+    "version": "0.0.0-rc",
     "description": "A client-side API to pub/sub to Biosphere channels.",
     "keywords": [
         "biosphere",
